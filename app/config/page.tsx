@@ -1,56 +1,67 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  broadcastOverlayConfig,
   defaultOverlayConfig,
   loadOverlayConfig,
   saveOverlayConfig,
   OverlayConfig,
 } from "../../lib/overlayConfig";
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-const getInitials = (name: string) =>
-  name
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
 const FLAG_OPTIONS = [
-  { code: "pl", label: "🇵🇱 Poland" },
-  { code: "us", label: "🇺🇸 United States" },
-  { code: "jp", label: "🇯🇵 Japan" },
-  { code: "kr", label: "🇰🇷 South Korea" },
-  { code: "cn", label: "🇨🇳 China" },
-  { code: "gb", label: "🇬🇧 United Kingdom" },
-  { code: "br", label: "🇧🇷 Brazil" },
-  { code: "de", label: "🇩🇪 Germany" },
-  { code: "fr", label: "🇫🇷 France" },
-  { code: "es", label: "🇪🇸 Spain" },
-  { code: "au", label: "🇦🇺 Australia" },
-  { code: "ca", label: "🇨🇦 Canada" },
-  { code: "mx", label: "🇲🇽 Mexico" },
-  { code: "nl", label: "🇳🇱 Netherlands" },
-  { code: "se", label: "🇸🇪 Sweden" },
-  { code: "no", label: "🇳🇴 Norway" },
-  { code: "fi", label: "🇫🇮 Finland" },
-  { code: "ru", label: "🇷🇺 Russia" },
-  { code: "it", label: "🇮🇹 Italy" },
-  { code: "ph", label: "🇵🇭 Philippines" },
+  { code: "pl", label: "Poland" },
+  { code: "us", label: "United States" },
+  { code: "jp", label: "Japan" },
+  { code: "kr", label: "South Korea" },
+  { code: "cn", label: "China" },
+  { code: "gb", label: "United Kingdom" },
+  { code: "br", label: "Brazil" },
+  { code: "de", label: "Germany" },
+  { code: "fr", label: "France" },
+  { code: "es", label: "Spain" },
+  { code: "au", label: "Australia" },
+  { code: "ca", label: "Canada" },
+  { code: "mx", label: "Mexico" },
+  { code: "nl", label: "Netherlands" },
+  { code: "se", label: "Sweden" },
+  { code: "no", label: "Norway" },
+  { code: "fi", label: "Finland" },
+  { code: "ru", label: "Russia" },
+  { code: "it", label: "Italy" },
+  { code: "ph", label: "Philippines" },
 ];
+
+const getFlagUrl = (code: string) => `https://flagcdn.com/w40/${code}.png`;
+
+const ACCENT_SWATCHES = [
+  "#d476ff",
+  "#56a2ff",
+  "#ff6b6b",
+  "#ffc857",
+  "#7ef29a",
+  "#9b8cff",
+  "#ff7ad9",
+  "#74e0d6",
+];
+
+const HEX_COLOR_REGEX = /^#([0-9a-fA-F]{6})$/;
+
+function normalizeHexColor(input: string) {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const prefixed = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+  if (!HEX_COLOR_REGEX.test(prefixed)) return null;
+  return prefixed.toUpperCase();
+}
 
 function FlagDropdown({
   value,
   onChange,
-}: {
+}: Readonly<{
   value: string;
   onChange: (value: string) => void;
-}) {
+}>) {
   const [open, setOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -79,14 +90,22 @@ function FlagDropdown({
   return (
     <div
       ref={dropdownRef}
-      className="flag-dropdown"
+      className={"flag-dropdown" + (open ? " is-open" : "")}
     >
       <button
         type="button"
         className="flag-button"
         onClick={() => setOpen((current) => !current)}
       >
-        <span>{selected.label}</span>
+        <span className="flag-selected-label">
+          <img
+            className="flag-icon"
+            src={getFlagUrl(selected.code)}
+            alt={selected.label}
+            loading="lazy"
+          />
+          <span>{selected.code.toUpperCase()}</span>
+        </span>
         <span className="flag-arrow">▾</span>
       </button>
 
@@ -102,7 +121,14 @@ function FlagDropdown({
                 setOpen(false);
               }}
             >
-              {option.label}
+              <img
+                className="flag-icon"
+                src={getFlagUrl(option.code)}
+                alt={option.label}
+                loading="lazy"
+              />
+              <span>{option.code.toUpperCase()}</span>
+              <span className="flag-option-label">{option.label}</span>
             </button>
           ))}
         </div>
@@ -114,7 +140,8 @@ function FlagDropdown({
 export default function ConfigPage() {
   const [config, setConfig] = useState<OverlayConfig>(defaultOverlayConfig);
   const [loaded, setLoaded] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [accent1Draft, setAccent1Draft] = useState(defaultOverlayConfig.themeAccent);
+  const [accent2Draft, setAccent2Draft] = useState(defaultOverlayConfig.themeAccent2);
 
   useEffect(() => {
     const stored = loadOverlayConfig();
@@ -127,137 +154,216 @@ export default function ConfigPage() {
   useEffect(() => {
     if (loaded) {
       saveOverlayConfig(config);
-
-      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-        const channel = new BroadcastChannel("overlay-config");
-        channel.postMessage({ type: "config-update", config });
-        channel.close();
-      }
+      broadcastOverlayConfig(config);
     }
   }, [config, loaded]);
+
+  useEffect(() => {
+    setAccent1Draft(config.themeAccent);
+    setAccent2Draft(config.themeAccent2);
+  }, [config.themeAccent, config.themeAccent2]);
 
   const update = <K extends keyof OverlayConfig>(key: K, value: OverlayConfig[K]) => {
     setConfig((current) => ({ ...current, [key]: value }));
   };
 
-  const downloadConfig = () => {
-    const blob = new Blob([JSON.stringify(config, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "tekken-overlay-config.json";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const applyAccent = (key: "themeAccent" | "themeAccent2", value: string) => {
+    const normalized = normalizeHexColor(value);
+    if (!normalized) return;
+    update(key, normalized);
   };
 
-  const importConfig = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const blurOnEnter = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.currentTarget.blur();
+    }
+  };
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = JSON.parse(reader.result as string) as Partial<OverlayConfig>;
-        setConfig({ ...defaultOverlayConfig, ...parsed });
-      } catch (error) {
-        console.error("Failed to import config", error);
-        alert("Failed to import config. Please use a valid JSON file.");
+  const commitAccentInput = (key: "themeAccent" | "themeAccent2") => {
+    if (key === "themeAccent") {
+      const normalized = normalizeHexColor(accent1Draft);
+      if (!normalized) {
+        setAccent1Draft(config.themeAccent);
+        return;
       }
-    };
-    reader.readAsText(file);
+      setAccent1Draft(normalized);
+      update("themeAccent", normalized);
+      return;
+    }
+
+    const normalized = normalizeHexColor(accent2Draft);
+    if (!normalized) {
+      setAccent2Draft(config.themeAccent2);
+      return;
+    }
+    setAccent2Draft(normalized);
+    update("themeAccent2", normalized);
   };
 
   return (
-    <div className="overlay-shell">
+    <div className="overlay-shell config-shell">
       <div className="page-grid">
 
-          <div className="controls-grid">
+        <div className="controls-grid">
             <div className="setting-group">
-              <label>Left player</label>
+              <label htmlFor="left-sponsor-input">Left player</label>
               <div className="player-config-row">
-                <div className="player-top-row">
-       <FlagDropdown
-  value={config.leftFlagCode}
-  onChange={(value) => update("leftFlagCode", value)}
-/>
+                <div className="player-row player-row-primary">
+                  <FlagDropdown
+                    value={config.leftFlagCode}
+                    onChange={(value) => update("leftFlagCode", value)}
+                  />
                   <input
+                    id="left-sponsor-input"
                     placeholder="Team / Sponsor"
                     value={config.leftSponsor}
                     onChange={(event) => update("leftSponsor", event.target.value)}
                   />
+                </div>
+                <div className="player-row player-row-secondary">
                   <input
                     className="name-input"
                     placeholder="Player name"
                     value={config.leftName}
                     onChange={(event) => update("leftName", event.target.value)}
                   />
+                  <input
+                    className="score-input"
+                    type="number"
+                    min={0}
+                    value={config.leftScore}
+                    onChange={(event) => update("leftScore", Number(event.target.value))}
+                  />
                 </div>
-                <input
-                  className="score-input"
-                  type="number"
-                  min={0}
-                  value={config.leftScore}
-                  onChange={(event) => update("leftScore", Number(event.target.value))}
-                />
               </div>
             </div>
 
             <div className="setting-group">
-              <label>Right player</label>
+              <label htmlFor="right-sponsor-input">Right player</label>
               <div className="player-config-row">
-                <div className="player-top-row">
-   <FlagDropdown
-  value={config.leftFlagCode}
-  onChange={(value) => update("leftFlagCode", value)}
-/>
+                <div className="player-row player-row-primary">
+                  <FlagDropdown
+                    value={config.rightFlagCode}
+                    onChange={(value) => update("rightFlagCode", value)}
+                  />
                   <input
+                    id="right-sponsor-input"
                     placeholder="Team / Sponsor"
                     value={config.rightSponsor}
                     onChange={(event) => update("rightSponsor", event.target.value)}
                   />
+                </div>
+                <div className="player-row player-row-secondary">
                   <input
                     className="name-input"
                     placeholder="Player name"
                     value={config.rightName}
                     onChange={(event) => update("rightName", event.target.value)}
                   />
+                  <input
+                    className="score-input"
+                    type="number"
+                    min={0}
+                    value={config.rightScore}
+                    onChange={(event) => update("rightScore", Number(event.target.value))}
+                  />
                 </div>
-                <input
-                  className="score-input"
-                  type="number"
-                  min={0}
-                  value={config.rightScore}
-                  onChange={(event) => update("rightScore", Number(event.target.value))}
-                />
               </div>
             </div>
 
             <div className="setting-group">
-              <label>Theme accents</label>
+              <label htmlFor="accent-1-input">Theme accents</label>
               <div className="color-row">
-                <label>
-                  Accent 1
-                  <input
-                    type="color"
-                    value={config.themeAccent}
-                    onChange={(event) => update("themeAccent", event.target.value)}
-                  />
-                </label>
-                <label>
-                  Accent 2
-                  <input
-                    type="color"
-                    value={config.themeAccent2}
-                    onChange={(event) => update("themeAccent2", event.target.value)}
-                  />
-                </label>
+                <div className="color-field">
+                  <label htmlFor="accent-1-input">Accent 1</label>
+                  <div className="color-input-row">
+                    <span
+                      className="color-preview"
+                      style={{ background: config.themeAccent }}
+                      aria-hidden="true"
+                    />
+                    <input
+                      id="accent-1-input"
+                      className="color-hex-input"
+                      type="text"
+                      value={accent1Draft}
+                      onChange={(event) => setAccent1Draft(event.target.value)}
+                      onBlur={() => commitAccentInput("themeAccent")}
+                      onKeyDown={blurOnEnter}
+                      placeholder="#D476FF"
+                      inputMode="text"
+                      spellCheck={false}
+                    />
+                  </div>
+                  <div className="swatch-row">
+                    {ACCENT_SWATCHES.map((color) => (
+                      <button
+                        key={`accent1-${color}`}
+                        type="button"
+                        className="swatch-button"
+                        style={{ background: color }}
+                        onClick={() => {
+                          setAccent1Draft(color);
+                          applyAccent("themeAccent", color);
+                        }}
+                        aria-label={`Set accent 1 to ${color}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="color-field">
+                  <label htmlFor="accent-2-input">Accent 2</label>
+                  <div className="color-input-row">
+                    <span
+                      className="color-preview"
+                      style={{ background: config.themeAccent2 }}
+                      aria-hidden="true"
+                    />
+                    <input
+                      id="accent-2-input"
+                      className="color-hex-input"
+                      type="text"
+                      value={accent2Draft}
+                      onChange={(event) => setAccent2Draft(event.target.value)}
+                      onBlur={() => commitAccentInput("themeAccent2")}
+                      onKeyDown={blurOnEnter}
+                      placeholder="#56A2FF"
+                      inputMode="text"
+                      spellCheck={false}
+                    />
+                  </div>
+                  <div className="swatch-row">
+                    {ACCENT_SWATCHES.map((color) => (
+                      <button
+                        key={`accent2-${color}`}
+                        type="button"
+                        className="swatch-button"
+                        style={{ background: color }}
+                        onClick={() => {
+                          setAccent2Draft(color);
+                          applyAccent("themeAccent2", color);
+                        }}
+                        aria-label={`Set accent 2 to ${color}`}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+
+            <div className="setting-group">
+              <label htmlFor="overlay-visibility-button">Overlay visibility</label>
+              <button
+                id="overlay-visibility-button"
+                type="button"
+                className="visibility-button"
+                onClick={() => update("overlayVisible", !config.overlayVisible)}
+              >
+                {config.overlayVisible ? "Hide overlay" : "Show overlay"}
+              </button>
+            </div>
+        </div>
         
       </div>
     </div>

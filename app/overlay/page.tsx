@@ -4,18 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   defaultOverlayConfig,
   loadOverlayConfig,
+  normalizeOverlayConfig,
   OverlayConfig,
+  OVERLAY_CHANNEL,
   STORAGE_KEY,
 } from "../../lib/overlayConfig";
-
-const getInitials = (name: string) =>
-  name
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
 export default function OverlayPage() {
   const [config, setConfig] = useState<OverlayConfig>(defaultOverlayConfig);
@@ -42,17 +35,17 @@ export default function OverlayPage() {
 
     window.addEventListener("storage", handleStorage);
 
-    const channel = new BroadcastChannel("overlay-config");
-    channel.addEventListener("message", (event) => {
-      if (event.data?.type === "config-update") {
-        const merged = {
-          ...defaultOverlayConfig,
-          ...event.data.config,
-        };
-        setConfig(merged);
-        configJsonRef.current = JSON.stringify(merged);
-      }
-    });
+    let channel: BroadcastChannel | null = null;
+    if ("BroadcastChannel" in window) {
+      channel = new BroadcastChannel(OVERLAY_CHANNEL);
+      channel.addEventListener("message", (event) => {
+        if (event.data?.type === "config-update") {
+          const merged = normalizeOverlayConfig(event.data.config as Partial<OverlayConfig>);
+          setConfig(merged);
+          configJsonRef.current = JSON.stringify(merged);
+        }
+      });
+    }
 
     const interval = window.setInterval(() => {
       const updated = loadOverlayConfig();
@@ -66,7 +59,7 @@ export default function OverlayPage() {
 
     return () => {
       window.removeEventListener("storage", handleStorage);
-      channel.close();
+      channel?.close();
       window.clearInterval(interval);
     };
   }, []);
@@ -96,7 +89,7 @@ export default function OverlayPage() {
 
   return (
     <div className={"overlay-only" + (previewBackground ? " preview-bg" : "")}> 
-      <div className="top-overlay">
+      {config.overlayVisible ? <div className="top-overlay">
         <div className="player-block left">
           <div className="player-pill">
             <div className="player-info">
@@ -138,7 +131,7 @@ export default function OverlayPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div> : null}
     </div>
   );
 }
