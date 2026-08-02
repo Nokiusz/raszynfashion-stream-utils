@@ -31,7 +31,8 @@ button,
 input,
 select,
 textarea {
-  font: inherit;
+  font-family: inherit;
+  font-size: 1.2rem;
 }
 
 button {
@@ -40,22 +41,32 @@ button {
 
 .overlay-shell {
   min-height: 100vh;
-  padding: 24px;
+  padding: 28px 32px;
 }
 
 .page-grid {
   display: grid;
   gap: 24px;
-  max-width: 1520px;
+  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
 }
 
 .header-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
+}
+
+.panel {
+  width: 100%;
+}
+
+.controls-grid {
+  display: grid;
+  gap: 24px;
 }
 
 .panel {
@@ -105,32 +116,28 @@ button {
 .setting-group input,
 .setting-group select,
 .setting-group textarea {
-  min-height: 42px;
-  
+   min-height: 56px;
+   
+   width: 100%;
+   border: 1px solid rgba(255, 255, 255, 0.12);
+   background: rgba(255, 255, 255, 0.04);
+   color: #f7f7fb;
+   padding: 0 16px;
+   font-size: 1.5rem;
+ }
 
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: #f7f7fb;
-  padding: 0 14px;
-}
+ .setting-group input.name-input {
+   min-width: 320px;
+ }
 
-.setting-group input.name-input {
-  min-width: 280px;
-}
+ .setting-group textarea {
+   resize: vertical;
+   min-height: 96px;
+   padding: 14px;
+ }
 
-.setting-group textarea {
-  resize: vertical;
-  min-height: 96px;
-  padding: 14px;
-}
-
-.button-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.button {
+ .button-row {
+   display: none;
   border: none;
   padding: 12px 18px;
   background: linear-gradient(135deg, #bf4bff, #4d63ff);
@@ -502,27 +509,30 @@ button {
 }
 
 .player-config-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 14px;
+}
+
+.player-top-row {
+  display: grid;
+  grid-template-columns: minmax(104px, 148px) minmax(180px, 1fr) minmax(180px, 1fr);
+  gap: 14px;
+  align-items: stretch;
 }
 
 .flag-name-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: none;
 }
 
 .flag-select,
 .flag-input {
-  width: 52px;
-  min-height: 42px;
-
+  min-height: 56px;
+  max-width: 148px;
+  width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
   color: #f7f7fb;
-  padding: 0 12px;
+  padding: 0 14px;
   text-align: center;
 }
 
@@ -531,9 +541,8 @@ button {
 }
 
 .score-input {
-  width: 96px;
-  min-height: 42px;
-
+  width: 100%;
+  min-height: 56px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
   color: #f7f7fb;
@@ -565,24 +574,23 @@ button {
 }
 
 .color-row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .color-row label {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 0.9rem;
-  color: #e7e2ff;
 }
 
 .color-row input {
   width: 100%;
-  height: 42px;
+  min-height: 56px;
+  height: 56px;
   border: none;
-
+  border-radius: 8px;
   padding: 0;
 }
 
@@ -828,4 +836,76 @@ button {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+.flag-dropdown {
+  position: relative;
+  width: 150px;
+  height: 38px;
+  z-index: 20;
+}
+
+.flag-button {
+  width: 100%;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 12px;
+
+  background: #111;
+  color: white;
+
+  border: 1px solid #444;
+  border-radius: 4px;
+
+  cursor: pointer;
+
+  font-size: 14px;
+}
+
+.flag-arrow {
+  opacity: 0.7;
+}
+
+.flag-menu {
+  position: absolute;
+
+  top: 42px;
+  left: 0;
+
+  width: 100%;
+
+  max-height: 250px;
+  overflow-y: auto;
+
+  background: #111;
+
+  border: 1px solid #444;
+  border-radius: 4px;
+
+  z-index: 99999;
+}
+
+.flag-option {
+  width: 100%;
+
+  padding: 8px 12px;
+
+  background: transparent;
+  color: white;
+
+  border: 0;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  font-size: 14px;
+}
+
+.flag-option:hover {
+  background: #333;
 }

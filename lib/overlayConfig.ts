@@ -15,12 +15,12 @@ export const STORAGE_KEY = "tekken-overlay-config";
 
 export const defaultOverlayConfig: OverlayConfig = {
   leftFlagCode: "pl",
-  leftSponsor: "Yomi",
-  leftName: "NARUU",
+  leftSponsor: "",
+  leftName: "REDX",
   leftScore: 1,
   rightFlagCode: "pl",
-  rightSponsor: "Yomi",
-  rightName: "PEACE",
+  rightSponsor: "TKND",
+  rightName: "NOKIUSZ",
   rightScore: 1,
   themeAccent: "#d476ff",
   themeAccent2: "#56a2ff",

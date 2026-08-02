@@ -44,6 +44,73 @@ const FLAG_OPTIONS = [
   { code: "ph", label: "🇵🇭 Philippines" },
 ];
 
+function FlagDropdown({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  const selected =
+    FLAG_OPTIONS.find((option) => option.code === value) ??
+    FLAG_OPTIONS[0];
+
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={dropdownRef}
+      className="flag-dropdown"
+    >
+      <button
+        type="button"
+        className="flag-button"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>{selected.label}</span>
+        <span className="flag-arrow">▾</span>
+      </button>
+
+      {open && (
+        <div className="flag-menu">
+          {FLAG_OPTIONS.map((option) => (
+            <button
+              key={option.code}
+              type="button"
+              className="flag-option"
+              onClick={() => {
+                onChange(option.code);
+                setOpen(false);
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ConfigPage() {
   const [config, setConfig] = useState<OverlayConfig>(defaultOverlayConfig);
   const [loaded, setLoaded] = useState(false);
@@ -107,200 +174,91 @@ export default function ConfigPage() {
   return (
     <div className="overlay-shell">
       <div className="page-grid">
-        <div className="header-row">
-          <div>
-            <h1 className="page-title">Overlay Config</h1>
-            <p className="page-subtitle">Save your settings to local storage, download a JSON file, or import one.</p>
-          </div>
-          <div className="button-row">
-            <a className="button secondary" href="/overlay" target="_blank" rel="noreferrer">
-              Open Overlay
-            </a>
-            <button className="button" onClick={downloadConfig}>
-              Download JSON
-            </button>
-            <button
-              className="button secondary"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Import JSON
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              style={{ display: "none" }}
-              onChange={importConfig}
-            />
-          </div>
-        </div>
 
-        <div className="split-columns">
-          <section className="panel panel-padding">
-            <div className="controls-grid">
-              <div className="setting-group">
-                <label>Left player</label>
-                <div className="player-config-row">
-                  <div className="flag-name-row">
-                    <select
-                      className="flag-select"
-                      value={config.leftFlagCode}
-                      onChange={(event) => update("leftFlagCode", event.target.value)}
-                    >
-                      {FLAG_OPTIONS.map((option) => (
-                        <option key={option.code} value={option.code}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      placeholder="Team / Sponsor"
-                      value={config.leftSponsor}
-                      onChange={(event) => update("leftSponsor", event.target.value)}
-                    />
-                    <input
-                      className="name-input"
-                      placeholder="Player name"
-                      value={config.leftName}
-                      onChange={(event) => update("leftName", event.target.value)}
-                    />
-                  </div>
+          <div className="controls-grid">
+            <div className="setting-group">
+              <label>Left player</label>
+              <div className="player-config-row">
+                <div className="player-top-row">
+       <FlagDropdown
+  value={config.leftFlagCode}
+  onChange={(value) => update("leftFlagCode", value)}
+/>
                   <input
-                    className="score-input"
-                    type="number"
-                    min={0}
-                    value={config.leftScore}
-                    onChange={(event) => update("leftScore", Number(event.target.value))}
+                    placeholder="Team / Sponsor"
+                    value={config.leftSponsor}
+                    onChange={(event) => update("leftSponsor", event.target.value)}
+                  />
+                  <input
+                    className="name-input"
+                    placeholder="Player name"
+                    value={config.leftName}
+                    onChange={(event) => update("leftName", event.target.value)}
                   />
                 </div>
+                <input
+                  className="score-input"
+                  type="number"
+                  min={0}
+                  value={config.leftScore}
+                  onChange={(event) => update("leftScore", Number(event.target.value))}
+                />
               </div>
+            </div>
 
-              <div className="setting-group">
-                <label>Right player</label>
-                <div className="player-config-row">
-                  <div className="flag-name-row">
-                    <select
-                      className="flag-select"
-                      value={config.rightFlagCode}
-                      onChange={(event) => update("rightFlagCode", event.target.value)}
-                    >
-                      {FLAG_OPTIONS.map((option) => (
-                        <option key={option.code} value={option.code}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      placeholder="Team / Sponsor"
-                      value={config.rightSponsor}
-                      onChange={(event) => update("rightSponsor", event.target.value)}
-                    />
-                    <input
-                      className="name-input"
-                      placeholder="Player name"
-                      value={config.rightName}
-                      onChange={(event) => update("rightName", event.target.value)}
-                    />
-                  </div>
+            <div className="setting-group">
+              <label>Right player</label>
+              <div className="player-config-row">
+                <div className="player-top-row">
+   <FlagDropdown
+  value={config.leftFlagCode}
+  onChange={(value) => update("leftFlagCode", value)}
+/>
                   <input
-                    className="score-input"
-                    type="number"
-                    min={0}
-                    value={config.rightScore}
-                    onChange={(event) => update("rightScore", Number(event.target.value))}
+                    placeholder="Team / Sponsor"
+                    value={config.rightSponsor}
+                    onChange={(event) => update("rightSponsor", event.target.value)}
+                  />
+                  <input
+                    className="name-input"
+                    placeholder="Player name"
+                    value={config.rightName}
+                    onChange={(event) => update("rightName", event.target.value)}
                   />
                 </div>
-              </div>
-
-              <div className="setting-group">
-                <label>Theme accents</label>
-                <div className="color-row">
-                  <label>
-                    Accent 1
-                    <input
-                      type="color"
-                      value={config.themeAccent}
-                      onChange={(event) => update("themeAccent", event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Accent 2
-                    <input
-                      type="color"
-                      value={config.themeAccent2}
-                      onChange={(event) => update("themeAccent2", event.target.value)}
-                    />
-                  </label>
-                </div>
+                <input
+                  className="score-input"
+                  type="number"
+                  min={0}
+                  value={config.rightScore}
+                  onChange={(event) => update("rightScore", Number(event.target.value))}
+                />
               </div>
             </div>
-          </section>
 
-          <section className="panel panel-padding">
-            <div className="overlay-preview config-preview">
-              <div className="overlay-scene">
-                <div className="top-overlay">
-                  <div className="player-block left">
-                    <div className="player-pill">
-                      <div className="player-info">
-                        <img
-                          className="flag-badge"
-                          src={`https://flagcdn.com/w40/${config.leftFlagCode}.png`}
-                          alt={config.leftFlagCode}
-                        />
-                        <div className="player-nickname">
-                          {config.leftSponsor ? <strong>{config.leftSponsor}</strong> : null}
-                          {config.leftSponsor ? " | " : ""}
-                          <span>{config.leftName}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      className="round-counter"
-                      suppressHydrationWarning
-                      style={{
-                        "--accent-from": config.themeAccent,
-                        "--accent-to": config.themeAccent2,
-                      } as React.CSSProperties}
-                    >
-                      <span>{config.leftScore}</span>
-                    </div>
-                  </div>
-
-                  <div className="center-block" />
-
-                  <div className="player-block right">
-                    <div
-                      className="round-counter"
-                      suppressHydrationWarning
-                      style={{
-                        "--accent-from": config.themeAccent,
-                        "--accent-to": config.themeAccent2,
-                      } as React.CSSProperties}
-                    >
-                      <span>{config.rightScore}</span>
-                    </div>
-                    <div className="player-pill right-align">
-                      <div className="player-info right-align">
-                        <img
-                          className="flag-badge"
-                          src={`https://flagcdn.com/w40/${config.rightFlagCode}.png`}
-                          alt={config.rightFlagCode}
-                        />
-                        <div className="player-nickname">
-                          {config.rightSponsor ? <strong>{config.rightSponsor}</strong> : null}
-                          {config.rightSponsor ? " | " : ""}
-                          <span>{config.rightName}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            <div className="setting-group">
+              <label>Theme accents</label>
+              <div className="color-row">
+                <label>
+                  Accent 1
+                  <input
+                    type="color"
+                    value={config.themeAccent}
+                    onChange={(event) => update("themeAccent", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Accent 2
+                  <input
+                    type="color"
+                    value={config.themeAccent2}
+                    onChange={(event) => update("themeAccent2", event.target.value)}
+                  />
+                </label>
               </div>
-              <div className="preview-mask" />
             </div>
-          </section>
-        </div>
+          </div>
+        
       </div>
     </div>
   );
