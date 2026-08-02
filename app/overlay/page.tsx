@@ -100,7 +100,7 @@ export default function OverlayPage() {
               />
               <div className="player-nickname">
                 {config.leftSponsor ? <strong>{config.leftSponsor}</strong> : null}
-                {config.leftSponsor ? " | " : ""}
+                {config.leftSponsor ? <span className="nickname-separator">|</span> : null}
                 <span>{config.leftName}</span>
               </div>
             </div>
@@ -125,7 +125,7 @@ export default function OverlayPage() {
               />
               <div className="player-nickname">
                 {config.rightSponsor ? <strong>{config.rightSponsor}</strong> : null}
-                {config.rightSponsor ? " | " : ""}
+                {config.rightSponsor ? <span className="nickname-separator">|</span> : null}
                 <span>{config.rightName}</span>
               </div>
             </div>

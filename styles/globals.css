@@ -154,9 +154,9 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 0;
   box-shadow: 0 18px 28px rgba(0, 0, 0, 0.25);
-  min-width: 440px;
+  min-width: 520px;
   width: auto;
-  max-width: 720px;
+  max-width: 820px;
   overflow: hidden;
   transform: skewX(32deg);
 }
@@ -189,23 +189,26 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
   min-width: 0;
   text-align: center;
 }
 
 .player-nickname {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
-  justify-items: center;
+  justify-content: center;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .player-nickname strong,
 .player-nickname span {
-  display: block;
+  display: inline;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -213,19 +216,23 @@ button {
 }
 
 .player-nickname strong {
-  font-size: 1.3rem;
-  letter-spacing: 0.22em;
+  font-size: 1.08rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #b8b4f5;
   font-weight: 900;
 }
 
 .player-nickname span {
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #f8f8ff;
+}
+
+.nickname-separator {
+  opacity: 0.7;
 }
 
 .round-counter {
