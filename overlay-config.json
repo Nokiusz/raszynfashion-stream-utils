@@ -1,0 +1,20 @@
+{
+  "leftFlagCode": "pl",
+  "leftSponsor": "",
+  "leftName": "NARUU",
+  "leftScore": 5,
+  "rightFlagCode": "pl",
+  "rightSponsor": "Yomi",
+  "rightName": "PEACE",
+  "rightScore": 3,
+  "themeAccent": "#d476ff",
+  "themeAccent2": "#56a2ff",
+  "phaseTitle": "GRUPA 3",
+  "roundLabel": "Grand Final",
+  "showPhase": true,
+  "leftFlag": "🇵🇱",
+  "rightFlag": "",
+  "roundDotsActive": 2,
+  "panelAlpha": 1,
+  "overlayOpacity": 1
+}
