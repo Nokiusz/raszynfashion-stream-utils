@@ -128,14 +128,13 @@ button {
 .player-block.left {
   justify-content: flex-start;
   padding-inline-start: 0;
-  transform: translateX(-60px);
-  transform: translateX(-60px);
+  transform: translateX(-70px);
 }
 
 .player-block.right {
   justify-content: flex-end;
   padding-inline-end: 0;
-  transform: translateX(60px);
+  transform: translateX(70px);
 }
 
 
