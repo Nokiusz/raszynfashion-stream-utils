@@ -66,16 +66,11 @@ function FlagDropdown({
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-  const selected =
-    FLAG_OPTIONS.find((option) => option.code === value) ??
-    FLAG_OPTIONS[0];
+  const selected = FLAG_OPTIONS.find((option) => option.code === value) ?? FLAG_OPTIONS[0];
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpen(false);
       }
     };
@@ -88,15 +83,8 @@ function FlagDropdown({
   }, []);
 
   return (
-    <div
-      ref={dropdownRef}
-      className={"flag-dropdown" + (open ? " is-open" : "")}
-    >
-      <button
-        type="button"
-        className="flag-button"
-        onClick={() => setOpen((current) => !current)}
-      >
+    <div ref={dropdownRef} className={"flag-dropdown" + (open ? " is-open" : "")}>
+      <button type="button" className="flag-button" onClick={() => setOpen((current) => !current)}>
         <span className="flag-selected-label">
           <img
             className="flag-icon"
@@ -167,6 +155,38 @@ export default function ConfigPage() {
     setConfig((current) => ({ ...current, [key]: value }));
   };
 
+  const swapSides = () => {
+    setConfig((current) => ({
+      ...current,
+      leftFlagCode: current.rightFlagCode,
+      leftSponsor: current.rightSponsor,
+      leftName: current.rightName,
+      leftScore: current.rightScore,
+      rightFlagCode: current.leftFlagCode,
+      rightSponsor: current.leftSponsor,
+      rightName: current.leftName,
+      rightScore: current.leftScore,
+    }));
+  };
+
+  const resetPlayers = () => {
+    setConfig((current) => ({
+      ...current,
+      leftFlagCode: "pl",
+      leftSponsor: "",
+      leftName: "",
+      leftScore: 0,
+      rightFlagCode: "pl",
+      rightSponsor: "",
+      rightName: "",
+      rightScore: 0,
+    }));
+  };
+
+  const adjustScore = (key: "leftScore" | "rightScore", delta: number) => {
+    update(key, Math.max(0, config[key] + delta));
+  };
+
   const applyAccent = (key: "themeAccent" | "themeAccent2", value: string) => {
     const normalized = normalizeHexColor(value);
     if (!normalized) return;
@@ -203,11 +223,22 @@ export default function ConfigPage() {
   return (
     <div className="overlay-shell config-shell">
       <div className="page-grid">
-
         <div className="controls-grid">
-            <div className="setting-group">
-              <label htmlFor="left-sponsor-input">Left player</label>
-              <div className="player-config-row">
+          <div className="setting-group quick-actions">
+            <div className="quick-actions-row">
+              <button type="button" className="quick-action-button" onClick={swapSides}>
+                ⇄ Swap sides
+              </button>
+              <button type="button" className="quick-action-button" onClick={resetPlayers}>
+                Reset players
+              </button>
+            </div>
+          </div>
+
+          <div className="setting-group">
+            <div className="players-columns">
+              <div className="player-column">
+                <label htmlFor="left-sponsor-input">Left player</label>
                 <div className="player-row player-row-primary">
                   <FlagDropdown
                     value={config.leftFlagCode}
@@ -220,27 +251,35 @@ export default function ConfigPage() {
                     onChange={(event) => update("leftSponsor", event.target.value)}
                   />
                 </div>
-                <div className="player-row player-row-secondary">
-                  <input
-                    className="name-input"
-                    placeholder="Player name"
-                    value={config.leftName}
-                    onChange={(event) => update("leftName", event.target.value)}
-                  />
-                  <input
-                    className="score-input"
-                    type="number"
-                    min={0}
-                    value={config.leftScore}
-                    onChange={(event) => update("leftScore", Number(event.target.value))}
-                  />
+                <input
+                  className="name-input"
+                  placeholder="Player name"
+                  value={config.leftName}
+                  onChange={(event) => update("leftName", event.target.value)}
+                />
+                <div className="score-block-stack">
+                  <button
+                    type="button"
+                    className="score-block-button score-block-button--positive"
+                    onClick={() => adjustScore("leftScore", 1)}
+                    aria-label="Increase left score"
+                  >
+                    +1
+                  </button>
+                  <div className="score-block-display">{config.leftScore}</div>
+                  <button
+                    type="button"
+                    className="score-block-button score-block-button--negative"
+                    onClick={() => adjustScore("leftScore", -1)}
+                    aria-label="Decrease left score"
+                  >
+                    -1
+                  </button>
                 </div>
               </div>
-            </div>
 
-            <div className="setting-group">
-              <label htmlFor="right-sponsor-input">Right player</label>
-              <div className="player-config-row">
+              <div className="player-column">
+                <label htmlFor="right-sponsor-input">Right player</label>
                 <div className="player-row player-row-primary">
                   <FlagDropdown
                     value={config.rightFlagCode}
@@ -253,118 +292,132 @@ export default function ConfigPage() {
                     onChange={(event) => update("rightSponsor", event.target.value)}
                   />
                 </div>
-                <div className="player-row player-row-secondary">
-                  <input
-                    className="name-input"
-                    placeholder="Player name"
-                    value={config.rightName}
-                    onChange={(event) => update("rightName", event.target.value)}
-                  />
-                  <input
-                    className="score-input"
-                    type="number"
-                    min={0}
-                    value={config.rightScore}
-                    onChange={(event) => update("rightScore", Number(event.target.value))}
-                  />
+                <input
+                  className="name-input"
+                  placeholder="Player name"
+                  value={config.rightName}
+                  onChange={(event) => update("rightName", event.target.value)}
+                />
+                <div className="score-block-stack">
+                  <button
+                    type="button"
+                    className="score-block-button score-block-button--positive"
+                    onClick={() => adjustScore("rightScore", 1)}
+                    aria-label="Increase right score"
+                  >
+                    +1
+                  </button>
+                  <div className="score-block-display">{config.rightScore}</div>
+                  <button
+                    type="button"
+                    className="score-block-button score-block-button--negative"
+                    onClick={() => adjustScore("rightScore", -1)}
+                    aria-label="Decrease right score"
+                  >
+                    -1
+                  </button>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="setting-group">
-              <label htmlFor="accent-1-input">Theme accents</label>
-              <div className="color-row">
-                <div className="color-field">
-                  <label htmlFor="accent-1-input">Accent 1</label>
-                  <div className="color-input-row">
-                    <span
-                      className="color-preview"
-                      style={{ background: config.themeAccent }}
-                      aria-hidden="true"
-                    />
-                    <input
-                      id="accent-1-input"
-                      className="color-hex-input"
-                      type="text"
-                      value={accent1Draft}
-                      onChange={(event) => setAccent1Draft(event.target.value)}
-                      onBlur={() => commitAccentInput("themeAccent")}
-                      onKeyDown={blurOnEnter}
-                      placeholder="#D476FF"
-                      inputMode="text"
-                      spellCheck={false}
-                    />
-                  </div>
-                  <div className="swatch-row">
-                    {ACCENT_SWATCHES.map((color) => (
-                      <button
-                        key={`accent1-${color}`}
-                        type="button"
-                        className="swatch-button"
-                        style={{ background: color }}
-                        onClick={() => {
-                          setAccent1Draft(color);
-                          applyAccent("themeAccent", color);
-                        }}
-                        aria-label={`Set accent 1 to ${color}`}
-                      />
-                    ))}
-                  </div>
+          <div className="setting-group">
+            <label htmlFor="accent-1-input">Theme accents</label>
+            <div className="color-row">
+              <div className="color-field">
+                <label htmlFor="accent-1-input">Accent 1</label>
+                <div className="color-input-row">
+                  <span
+                    className="color-preview"
+                    style={{ background: config.themeAccent }}
+                    aria-hidden="true"
+                    suppressHydrationWarning
+                  />
+                  <input
+                    id="accent-1-input"
+                    className="color-hex-input"
+                    type="text"
+                    value={accent1Draft}
+                    onChange={(event) => setAccent1Draft(event.target.value)}
+                    onBlur={() => commitAccentInput("themeAccent")}
+                    onKeyDown={blurOnEnter}
+                    placeholder="#D476FF"
+                    inputMode="text"
+                    spellCheck={false}
+                  />
                 </div>
+                <div className="swatch-row">
+                  {ACCENT_SWATCHES.map((color) => (
+                    <button
+                      key={`accent1-${color}`}
+                      type="button"
+                      className="swatch-button"
+                      style={{ background: color }}
+                      onClick={() => {
+                        setAccent1Draft(color);
+                        applyAccent("themeAccent", color);
+                      }}
+                      aria-label={`Set accent 1 to ${color}`}
+                      suppressHydrationWarning
+                    />
+                  ))}
+                </div>
+              </div>
 
-                <div className="color-field">
-                  <label htmlFor="accent-2-input">Accent 2</label>
-                  <div className="color-input-row">
-                    <span
-                      className="color-preview"
-                      style={{ background: config.themeAccent2 }}
-                      aria-hidden="true"
+              <div className="color-field">
+                <label htmlFor="accent-2-input">Accent 2</label>
+                <div className="color-input-row">
+                  <span
+                    className="color-preview"
+                    style={{ background: config.themeAccent2 }}
+                    aria-hidden="true"
+                    suppressHydrationWarning
+                  />
+                  <input
+                    id="accent-2-input"
+                    className="color-hex-input"
+                    type="text"
+                    value={accent2Draft}
+                    onChange={(event) => setAccent2Draft(event.target.value)}
+                    onBlur={() => commitAccentInput("themeAccent2")}
+                    onKeyDown={blurOnEnter}
+                    placeholder="#56A2FF"
+                    inputMode="text"
+                    spellCheck={false}
+                  />
+                </div>
+                <div className="swatch-row">
+                  {ACCENT_SWATCHES.map((color) => (
+                    <button
+                      key={`accent2-${color}`}
+                      type="button"
+                      className="swatch-button"
+                      style={{ background: color }}
+                      onClick={() => {
+                        setAccent2Draft(color);
+                        applyAccent("themeAccent2", color);
+                      }}
+                      aria-label={`Set accent 2 to ${color}`}
+                      suppressHydrationWarning
                     />
-                    <input
-                      id="accent-2-input"
-                      className="color-hex-input"
-                      type="text"
-                      value={accent2Draft}
-                      onChange={(event) => setAccent2Draft(event.target.value)}
-                      onBlur={() => commitAccentInput("themeAccent2")}
-                      onKeyDown={blurOnEnter}
-                      placeholder="#56A2FF"
-                      inputMode="text"
-                      spellCheck={false}
-                    />
-                  </div>
-                  <div className="swatch-row">
-                    {ACCENT_SWATCHES.map((color) => (
-                      <button
-                        key={`accent2-${color}`}
-                        type="button"
-                        className="swatch-button"
-                        style={{ background: color }}
-                        onClick={() => {
-                          setAccent2Draft(color);
-                          applyAccent("themeAccent2", color);
-                        }}
-                        aria-label={`Set accent 2 to ${color}`}
-                      />
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="setting-group">
-              <label htmlFor="overlay-visibility-button">Overlay visibility</label>
-              <button
-                id="overlay-visibility-button"
-                type="button"
-                className="visibility-button"
-                onClick={() => update("overlayVisible", !config.overlayVisible)}
-              >
-                {config.overlayVisible ? "Hide overlay" : "Show overlay"}
-              </button>
-            </div>
+          <div className="setting-group">
+            <label htmlFor="overlay-visibility-button">Overlay visibility</label>
+            <button
+              id="overlay-visibility-button"
+              type="button"
+              className="visibility-button"
+              onClick={() => update("overlayVisible", !config.overlayVisible)}
+            >
+              {config.overlayVisible ? "Hide overlay" : "Show overlay"}
+            </button>
+          </div>
         </div>
-        
       </div>
     </div>
   );

@@ -12,9 +12,11 @@ This file documents practical implementation constraints and preferred patterns 
 
 1. Keep overlay config shape centralized in lib/overlayConfig.ts.
 2. Add new settings to:
+
 - OverlayConfig type
 - defaultOverlayConfig
 - normalizeOverlayConfig
+
 3. Use helper functions from lib/overlayConfig.ts for loading, saving, and broadcasting.
 
 ## OBS Compatibility Rules

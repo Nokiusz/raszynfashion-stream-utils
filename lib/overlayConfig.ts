@@ -24,8 +24,8 @@ export const defaultOverlayConfig: OverlayConfig = {
   rightSponsor: "TKND",
   rightName: "NOKIUSZ",
   rightScore: 1,
-  themeAccent: "#d476ff",
-  themeAccent2: "#56a2ff",
+  themeAccent: "#9B8CFF",
+  themeAccent2: "#9B8CFF",
   overlayVisible: true,
 };
 
@@ -33,7 +33,7 @@ const parseScore = (value: unknown, fallback: number) =>
   typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
 export const normalizeOverlayConfig = (
-  parsed: Partial<OverlayConfig> | null | undefined
+  parsed: Partial<OverlayConfig> | null | undefined,
 ): OverlayConfig => {
   const source = parsed ?? {};
   return {
@@ -75,4 +75,3 @@ export const broadcastOverlayConfig = (config: OverlayConfig) => {
   channel.postMessage({ type: "config-update", config });
   channel.close();
 };
-

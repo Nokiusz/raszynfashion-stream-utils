@@ -78,60 +78,61 @@ export default function OverlayPage() {
 
   const accentGradient = useMemo(
     () => `linear-gradient(90deg, ${config.themeAccent}, ${config.themeAccent2})`,
-    [config.themeAccent, config.themeAccent2]
+    [config.themeAccent, config.themeAccent2],
   );
 
-  const getFlagUrl = (countryCode: string) =>
-    `https://flagcdn.com/w40/${countryCode}.png`;
+  const getFlagUrl = (countryCode: string) => `https://flagcdn.com/w40/${countryCode}.png`;
 
   const previewBackground =
     typeof window !== "undefined" && window.location.search.includes("preview");
 
   return (
-    <div className={"overlay-only" + (previewBackground ? " preview-bg" : "")}> 
-      {config.overlayVisible ? <div className="top-overlay">
-        <div className="player-block left">
-          <div className="player-pill">
-            <div className="player-info">
-              <img
-                className="flag-badge"
-                src={getFlagUrl(config.leftFlagCode)}
-                alt={config.leftFlagCode}
-              />
-              <div className="player-nickname">
-                {config.leftSponsor ? <strong>{config.leftSponsor}</strong> : null}
-                {config.leftSponsor ? <span className="nickname-separator">|</span> : null}
-                <span>{config.leftName}</span>
+    <div className={"overlay-only" + (previewBackground ? " preview-bg" : "")}>
+      {config.overlayVisible ? (
+        <div className="top-overlay">
+          <div className="player-block left">
+            <div className="player-pill">
+              <div className="player-info">
+                <img
+                  className="flag-badge"
+                  src={getFlagUrl(config.leftFlagCode)}
+                  alt={config.leftFlagCode}
+                />
+                <div className="player-nickname">
+                  {config.leftSponsor ? <strong>{config.leftSponsor}</strong> : null}
+                  {config.leftSponsor ? <span className="nickname-separator">|</span> : null}
+                  <span>{config.leftName}</span>
+                </div>
+              </div>
+            </div>
+            <div className="round-counter" style={{ background: accentGradient }}>
+              <span>{config.leftScore}</span>
+            </div>
+          </div>
+
+          <div className="center-block" />
+
+          <div className="player-block right">
+            <div className="round-counter" style={{ background: accentGradient }}>
+              <span>{config.rightScore}</span>
+            </div>
+            <div className="player-pill right-align">
+              <div className="player-info right-align">
+                <img
+                  className="flag-badge"
+                  src={getFlagUrl(config.rightFlagCode)}
+                  alt={config.rightFlagCode}
+                />
+                <div className="player-nickname">
+                  {config.rightSponsor ? <strong>{config.rightSponsor}</strong> : null}
+                  {config.rightSponsor ? <span className="nickname-separator">|</span> : null}
+                  <span>{config.rightName}</span>
+                </div>
               </div>
             </div>
           </div>
-          <div className="round-counter" style={{ background: accentGradient }}>
-            <span>{config.leftScore}</span>
-          </div>
         </div>
-
-        <div className="center-block" />
-
-        <div className="player-block right">
-          <div className="round-counter" style={{ background: accentGradient }}>
-            <span>{config.rightScore}</span>
-          </div>
-          <div className="player-pill right-align">
-            <div className="player-info right-align">
-              <img
-                className="flag-badge"
-                src={getFlagUrl(config.rightFlagCode)}
-                alt={config.rightFlagCode}
-              />
-              <div className="player-nickname">
-                {config.rightSponsor ? <strong>{config.rightSponsor}</strong> : null}
-                {config.rightSponsor ? <span className="nickname-separator">|</span> : null}
-                <span>{config.rightName}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> : null}
+      ) : null}
     </div>
   );
 }
