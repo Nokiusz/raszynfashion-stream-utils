@@ -3,17 +3,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   defaultOverlayConfig,
+  fetchRemoteOverlayConfig,
   loadOverlayConfig,
   normalizeOverlayConfig,
+  saveOverlayConfig,
   OverlayConfig,
   OVERLAY_CHANNEL,
   STORAGE_KEY,
 } from "../../lib/overlayConfig";
 
+const REMOTE_POLL_INTERVAL_MS = 1000;
+
 export default function OverlayPage() {
   const [config, setConfig] = useState<OverlayConfig>(defaultOverlayConfig);
 
   const configJsonRef = useRef<string>(JSON.stringify(defaultOverlayConfig));
+  const lastRemoteUpdatedAtRef = useRef<number>(0);
 
   useEffect(() => {
     const stored = loadOverlayConfig();
@@ -47,17 +52,22 @@ export default function OverlayPage() {
       });
     }
 
-    const interval = window.setInterval(() => {
-      const updated = loadOverlayConfig();
-      if (!updated) return;
-      const updatedJson = JSON.stringify(updated);
-      if (updatedJson !== configJsonRef.current) {
-        setConfig(updated);
-        configJsonRef.current = updatedJson;
-      }
-    }, 500);
+    let cancelled = false;
+    const pollRemote = async () => {
+      const remote = await fetchRemoteOverlayConfig();
+      if (cancelled || !remote) return;
+      if (remote.updatedAt <= lastRemoteUpdatedAtRef.current) return;
+      lastRemoteUpdatedAtRef.current = remote.updatedAt;
+      setConfig(remote.config);
+      configJsonRef.current = JSON.stringify(remote.config);
+      saveOverlayConfig(remote.config);
+    };
+
+    pollRemote();
+    const interval = window.setInterval(pollRemote, REMOTE_POLL_INTERVAL_MS);
 
     return () => {
+      cancelled = true;
       window.removeEventListener("storage", handleStorage);
       channel?.close();
       window.clearInterval(interval);

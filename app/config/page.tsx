@@ -4,10 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import {
   broadcastOverlayConfig,
   defaultOverlayConfig,
+  fetchRemoteOverlayConfig,
   loadOverlayConfig,
+  pushRemoteOverlayConfig,
   saveOverlayConfig,
   OverlayConfig,
+  TOKEN_STORAGE_KEY,
 } from "../../lib/overlayConfig";
+
+const PUSH_DEBOUNCE_MS = 400;
 
 const FLAG_OPTIONS = [
   { code: "pl", label: "Poland" },
@@ -130,26 +135,69 @@ export default function ConfigPage() {
   const [loaded, setLoaded] = useState(false);
   const [accent1Draft, setAccent1Draft] = useState(defaultOverlayConfig.themeAccent);
   const [accent2Draft, setAccent2Draft] = useState(defaultOverlayConfig.themeAccent2);
+  const [token, setToken] = useState("");
+  const [syncStatus, setSyncStatus] = useState<"idle" | "synced" | "error">("idle");
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const [syncPanelOpen, setSyncPanelOpen] = useState(false);
+
+  const pushTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const stored = loadOverlayConfig();
-    if (stored) {
-      setConfig(stored);
-    }
-    setLoaded(true);
+    const storedToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (storedToken) setToken(storedToken);
+
+    (async () => {
+      const remote = await fetchRemoteOverlayConfig();
+      if (remote) {
+        setConfig(remote.config);
+      } else {
+        const stored = loadOverlayConfig();
+        if (stored) setConfig(stored);
+      }
+      setLoaded(true);
+    })();
   }, []);
 
   useEffect(() => {
-    if (loaded) {
-      saveOverlayConfig(config);
-      broadcastOverlayConfig(config);
+    if (!loaded) return;
+
+    saveOverlayConfig(config);
+    broadcastOverlayConfig(config);
+
+    if (!token) {
+      setSyncStatus("idle");
+      return;
     }
-  }, [config, loaded]);
+
+    if (pushTimeoutRef.current) window.clearTimeout(pushTimeoutRef.current);
+    pushTimeoutRef.current = window.setTimeout(async () => {
+      const ok = await pushRemoteOverlayConfig(config, token);
+      if (ok) {
+        setSyncStatus("synced");
+        setLastSyncedAt(Date.now());
+      } else {
+        setSyncStatus("error");
+      }
+    }, PUSH_DEBOUNCE_MS);
+
+    return () => {
+      if (pushTimeoutRef.current) window.clearTimeout(pushTimeoutRef.current);
+    };
+  }, [config, loaded, token]);
 
   useEffect(() => {
     setAccent1Draft(config.themeAccent);
     setAccent2Draft(config.themeAccent2);
   }, [config.themeAccent, config.themeAccent2]);
+
+  const updateToken = (value: string) => {
+    setToken(value);
+    if (value) {
+      window.localStorage.setItem(TOKEN_STORAGE_KEY, value);
+    } else {
+      window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+  };
 
   const update = <K extends keyof OverlayConfig>(key: K, value: OverlayConfig[K]) => {
     setConfig((current) => ({ ...current, [key]: value }));
@@ -224,6 +272,41 @@ export default function ConfigPage() {
     <div className="overlay-shell config-shell">
       <div className="page-grid">
         <div className="controls-grid">
+          <div className="setting-group sync-panel">
+            <button
+              type="button"
+              className="sync-panel-toggle"
+              onClick={() => setSyncPanelOpen((current) => !current)}
+              aria-expanded={syncPanelOpen}
+            >
+              <span>Remote sync</span>
+              <span className={"sync-status sync-status--" + syncStatus}>
+                {!token
+                  ? "Not synced — no token set"
+                  : syncStatus === "error"
+                    ? "Not synced — check token/connection"
+                    : syncStatus === "synced" && lastSyncedAt
+                      ? `Synced at ${new Date(lastSyncedAt).toLocaleTimeString()}`
+                      : "Waiting to sync…"}
+              </span>
+              <span className="sync-panel-arrow">{syncPanelOpen ? "▾" : "▸"}</span>
+            </button>
+            {syncPanelOpen && (
+              <div className="sync-panel-body">
+                <label htmlFor="sync-token-input">Remote sync token</label>
+                <input
+                  id="sync-token-input"
+                  type="password"
+                  placeholder="Paste CONFIG_API_TOKEN"
+                  value={token}
+                  onChange={(event) => updateToken(event.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+            )}
+          </div>
+
           <div className="setting-group quick-actions">
             <div className="quick-actions-row">
               <button type="button" className="quick-action-button" onClick={swapSides}>
@@ -231,6 +314,13 @@ export default function ConfigPage() {
               </button>
               <button type="button" className="quick-action-button" onClick={resetPlayers}>
                 Reset players
+              </button>
+              <button
+                type="button"
+                className="quick-action-button"
+                onClick={() => update("overlayVisible", !config.overlayVisible)}
+              >
+                {config.overlayVisible ? "Hide overlay" : "Show overlay"}
               </button>
             </div>
           </div>
@@ -406,17 +496,6 @@ export default function ConfigPage() {
             </div>
           </div>
 
-          <div className="setting-group">
-            <label htmlFor="overlay-visibility-button">Overlay visibility</label>
-            <button
-              id="overlay-visibility-button"
-              type="button"
-              className="visibility-button"
-              onClick={() => update("overlayVisible", !config.overlayVisible)}
-            >
-              {config.overlayVisible ? "Hide overlay" : "Show overlay"}
-            </button>
-          </div>
         </div>
       </div>
     </div>

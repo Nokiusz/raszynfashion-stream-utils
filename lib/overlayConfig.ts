@@ -75,3 +75,47 @@ export const broadcastOverlayConfig = (config: OverlayConfig) => {
   channel.postMessage({ type: "config-update", config });
   channel.close();
 };
+
+export const CONFIG_API_ROUTE = "/api/overlay-config";
+export const TOKEN_STORAGE_KEY = "overlay-config-token";
+
+export type RemoteOverlayConfig = { config: OverlayConfig; updatedAt: number };
+
+export const fetchRemoteOverlayConfig =
+  async (): Promise<RemoteOverlayConfig | null> => {
+    try {
+      const response = await fetch(CONFIG_API_ROUTE, { cache: "no-store" });
+      if (!response.ok) return null;
+      const data = (await response.json()) as {
+        config: unknown;
+        updatedAt: number;
+      };
+      return {
+        config: normalizeOverlayConfig(data.config as Partial<OverlayConfig>),
+        updatedAt: data.updatedAt,
+      };
+    } catch (error) {
+      console.warn("Failed to fetch remote overlay config", error);
+      return null;
+    }
+  };
+
+export const pushRemoteOverlayConfig = async (
+  config: OverlayConfig,
+  token: string,
+): Promise<boolean> => {
+  try {
+    const response = await fetch(CONFIG_API_ROUTE, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(config),
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn("Failed to push remote overlay config", error);
+    return false;
+  }
+};

@@ -50,6 +50,25 @@ Config updates are broadcast over channel:
 
 - overlay-config
 
+## Remote Sync (cross-device)
+
+`/overlay` polls `GET /api/overlay-config` (~1s) so it stays in sync across
+different machines/browsers, not just tabs on the same device. `/config`
+pushes changes via `PUT /api/overlay-config` (debounced), authorized with a
+bearer token pasted into the "Remote sync token" field (stored in
+`localStorage` under `overlay-config-token`).
+
+Required environment variables (see `docs/remote-config-spec.md` for details):
+
+- `KV_REST_API_URL` / `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` /
+  `UPSTASH_REDIS_REST_TOKEN`) — Upstash Redis credentials, auto-provisioned by
+  the Vercel Marketplace integration.
+- `CONFIG_API_TOKEN` — server-only secret required to authorize `PUT` requests.
+
+Without these env vars, `/config` falls back to local-storage-only editing and
+`/overlay` simply has nothing to poll successfully, so both keep working
+offline.
+
 ## Notes for OBS CEF
 
 Native color inputs can be inconsistent in older CEF versions. This project uses:

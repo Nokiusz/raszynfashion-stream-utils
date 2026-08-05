@@ -102,6 +102,52 @@ button {
   padding: 10px;
 }
 
+.sync-panel {
+  gap: 0;
+}
+
+.sync-panel-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f7f7fb;
+  padding: 0 14px;
+  font-weight: 700;
+}
+
+.sync-panel-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sync-panel-arrow {
+  margin-inline-start: auto;
+  opacity: 0.7;
+}
+
+.sync-panel-body {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px 0;
+}
+
+.sync-status {
+  font-size: 0.9rem;
+  color: rgba(247, 247, 251, 0.6);
+}
+
+.sync-status--synced {
+  color: #7ef29a;
+}
+
+.sync-status--error {
+  color: #ff6b6b;
+}
+
 .overlay-only {
   min-height: 100vh;
   position: relative;
@@ -459,24 +505,6 @@ button {
   cursor: pointer;
 }
 
-.visibility-button {
-  width: 100%;
-  min-height: 56px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.08);
-  color: #f7f7fb;
-  padding: 0 18px;
-  font-weight: 700;
-  font-size: 1.06rem;
-}
-
-.visibility-button:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
 .flag-dropdown {
   position: relative;
   width: 160px;
@@ -604,6 +632,13 @@ button {
   letter-spacing: 0.01em;
 }
 
+.config-shell .player-column > label,
+.config-shell .sync-panel-body > label {
+  font-size: 1.36rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
 .config-shell .setting-group input,
 .config-shell .setting-group select,
 .config-shell .setting-group textarea,
@@ -634,7 +669,11 @@ button {
 }
 
 .config-shell .player-row-primary {
-  grid-template-columns: minmax(190px, 260px) minmax(320px, 1fr);
+  grid-template-columns: minmax(190px, 280px) minmax(320px, 1fr);
+}
+
+.config-shell .player-column input {
+  min-height: 84px;
 }
 
 .config-shell .score-block-stack {
@@ -692,24 +731,18 @@ button {
   height: 30px;
 }
 
-.config-shell .visibility-button {
-  min-height: 70px;
-  font-size: 1.28rem;
-  padding: 0 22px;
-}
-
 .config-shell .flag-dropdown {
-  width: 240px;
-  height: 70px;
+  width: 270px;
+  height: 84px;
 }
 
 .config-shell .flag-button {
-  height: 70px;
+  height: 84px;
   padding: 0 16px;
 }
 
 .config-shell .flag-menu {
-  top: 70px;
+  top: 84px;
 }
 
 .config-shell .flag-selected-label {
