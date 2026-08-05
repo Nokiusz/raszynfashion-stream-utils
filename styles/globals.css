@@ -96,6 +96,62 @@ button {
   min-width: 280px;
 }
 
+.player-suggest {
+  position: relative;
+  width: 100%;
+  z-index: 20;
+}
+
+.player-suggest-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: max-content;
+  min-width: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+  background: #111;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  z-index: 99999;
+}
+
+.player-suggest-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  background: transparent;
+  color: white;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.player-suggest-option:hover,
+.player-suggest-option.is-highlighted {
+  background: #333;
+}
+
+.player-suggest-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.player-suggest-flag {
+  opacity: 0.7;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
 .setting-group textarea {
   resize: vertical;
   min-height: 84px;

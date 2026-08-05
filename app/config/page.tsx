@@ -11,31 +11,16 @@ import {
   OverlayConfig,
   TOKEN_STORAGE_KEY,
 } from "../../lib/overlayConfig";
+import {
+  KnownPlayer,
+  loadKnownPlayers,
+  rememberKnownPlayer,
+  suggestPlayers,
+} from "../../lib/knownPlayers";
+import { loadKnownTeams, rememberKnownTeam, suggestTeams } from "../../lib/knownTeams";
+import { FLAG_OPTIONS } from "../../lib/flags";
 
 const PUSH_DEBOUNCE_MS = 400;
-
-const FLAG_OPTIONS = [
-  { code: "pl", label: "Poland" },
-  { code: "us", label: "United States" },
-  { code: "jp", label: "Japan" },
-  { code: "kr", label: "South Korea" },
-  { code: "cn", label: "China" },
-  { code: "gb", label: "United Kingdom" },
-  { code: "br", label: "Brazil" },
-  { code: "de", label: "Germany" },
-  { code: "fr", label: "France" },
-  { code: "es", label: "Spain" },
-  { code: "au", label: "Australia" },
-  { code: "ca", label: "Canada" },
-  { code: "mx", label: "Mexico" },
-  { code: "nl", label: "Netherlands" },
-  { code: "se", label: "Sweden" },
-  { code: "no", label: "Norway" },
-  { code: "fi", label: "Finland" },
-  { code: "ru", label: "Russia" },
-  { code: "it", label: "Italy" },
-  { code: "ph", label: "Philippines" },
-];
 
 const getFlagUrl = (code: string) => `https://flagcdn.com/w40/${code}.png`;
 
@@ -130,6 +115,263 @@ function FlagDropdown({
   );
 }
 
+function PlayerSuggestInput({
+  id,
+  value,
+  placeholder,
+  className,
+  players,
+  onChange,
+  onPick,
+  onCommit,
+}: Readonly<{
+  id: string;
+  value: string;
+  placeholder: string;
+  className?: string;
+  players: KnownPlayer[];
+  onChange: (value: string) => void;
+  onPick: (player: KnownPlayer) => void;
+  onCommit: () => void;
+}>) {
+  const [open, setOpen] = useState(false);
+  const [highlighted, setHighlighted] = useState(0);
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const suggestions = open ? (value.trim() ? suggestPlayers(value, players) : players.slice(0, 6)) : [];
+
+  useEffect(() => {
+    setHighlighted(0);
+  }, [value, open]);
+
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+    };
+  }, []);
+
+  const pick = (player: KnownPlayer) => {
+    onPick(player);
+    setOpen(false);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      if (suggestions.length === 0) return;
+      setHighlighted((current) => (current + 1) % suggestions.length);
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!open || suggestions.length === 0) return;
+      setHighlighted((current) => (current - 1 + suggestions.length) % suggestions.length);
+      return;
+    }
+
+    if (event.key === "Enter") {
+      if (open && suggestions[highlighted]) {
+        event.preventDefault();
+        pick(suggestions[highlighted]);
+        return;
+      }
+      event.currentTarget.blur();
+      return;
+    }
+
+    if (event.key === "Escape") {
+      setOpen(false);
+      return;
+    }
+
+    if (event.key === "Tab") {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="player-suggest">
+      <input
+        id={id}
+        className={className}
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => {
+          onChange(event.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => {
+          setOpen(false);
+          onCommit();
+        }}
+        onKeyDown={handleKeyDown}
+        autoComplete="off"
+      />
+      {open && suggestions.length > 0 && (
+        <div className="player-suggest-menu">
+          {suggestions.map((player, index) => (
+            <button
+              key={`${player.name}-${player.sponsor}`}
+              type="button"
+              className={
+                "player-suggest-option" + (index === highlighted ? " is-highlighted" : "")
+              }
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => pick(player)}
+            >
+              <span className="player-suggest-name">
+                {player.sponsor ? <strong>{player.sponsor}</strong> : null}
+                {player.sponsor ? <span className="nickname-separator">|</span> : null}
+                <span>{player.name}</span>
+              </span>
+              <span className="player-suggest-flag">{player.flagCode.toUpperCase()}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamSuggestInput({
+  id,
+  value,
+  placeholder,
+  teams,
+  onChange,
+  onCommit,
+}: Readonly<{
+  id: string;
+  value: string;
+  placeholder: string;
+  teams: string[];
+  onChange: (value: string) => void;
+  onCommit: (value: string) => void;
+}>) {
+  const [open, setOpen] = useState(false);
+  const [highlighted, setHighlighted] = useState(0);
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const suggestions = open ? (value.trim() ? suggestTeams(value, teams) : teams.slice(0, 6)) : [];
+
+  useEffect(() => {
+    setHighlighted(0);
+  }, [value, open]);
+
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+    };
+  }, []);
+
+  const pick = (team: string) => {
+    onChange(team);
+    onCommit(team);
+    setOpen(false);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      if (suggestions.length === 0) return;
+      setHighlighted((current) => (current + 1) % suggestions.length);
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!open || suggestions.length === 0) return;
+      setHighlighted((current) => (current - 1 + suggestions.length) % suggestions.length);
+      return;
+    }
+
+    if (event.key === "Enter") {
+      if (open && suggestions[highlighted]) {
+        event.preventDefault();
+        pick(suggestions[highlighted]);
+        return;
+      }
+      event.currentTarget.blur();
+      return;
+    }
+
+    if (event.key === "Escape") {
+      setOpen(false);
+      return;
+    }
+
+    if (event.key === "Tab") {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="player-suggest">
+      <input
+        id={id}
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => {
+          onChange(event.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => {
+          setOpen(false);
+          onCommit(value);
+        }}
+        onKeyDown={handleKeyDown}
+        autoComplete="off"
+      />
+      {open && suggestions.length > 0 && (
+        <div className="player-suggest-menu">
+          {suggestions.map((team, index) => (
+            <button
+              key={team}
+              type="button"
+              className={
+                "player-suggest-option" + (index === highlighted ? " is-highlighted" : "")
+              }
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => pick(team)}
+            >
+              <span className="player-suggest-name">{team}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ConfigPage() {
   const [config, setConfig] = useState<OverlayConfig>(defaultOverlayConfig);
   const [loaded, setLoaded] = useState(false);
@@ -139,12 +381,17 @@ export default function ConfigPage() {
   const [syncStatus, setSyncStatus] = useState<"idle" | "synced" | "error">("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const [syncPanelOpen, setSyncPanelOpen] = useState(false);
+  const [knownPlayers, setKnownPlayers] = useState<KnownPlayer[]>([]);
+  const [knownTeams, setKnownTeams] = useState<string[]>([]);
 
   const pushTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const storedToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
     if (storedToken) setToken(storedToken);
+
+    setKnownPlayers(loadKnownPlayers());
+    setKnownTeams(loadKnownTeams());
 
     (async () => {
       const remote = await fetchRemoteOverlayConfig();
@@ -201,6 +448,48 @@ export default function ConfigPage() {
 
   const update = <K extends keyof OverlayConfig>(key: K, value: OverlayConfig[K]) => {
     setConfig((current) => ({ ...current, [key]: value }));
+  };
+
+  const applyKnownPlayer = (side: "left" | "right", player: KnownPlayer) => {
+    const flagCode = FLAG_OPTIONS.some((option) => option.code === player.flagCode)
+      ? player.flagCode
+      : "pl";
+
+    setConfig((current) =>
+      side === "left"
+        ? {
+            ...current,
+            leftFlagCode: flagCode,
+            leftSponsor: player.sponsor,
+            leftName: player.name,
+          }
+        : {
+            ...current,
+            rightFlagCode: flagCode,
+            rightSponsor: player.sponsor,
+            rightName: player.name,
+          },
+    );
+
+    rememberKnownPlayer({ ...player, flagCode });
+    setKnownPlayers(loadKnownPlayers());
+  };
+
+  const rememberFromField = (side: "left" | "right") => {
+    const name = side === "left" ? config.leftName : config.rightName;
+    if (!name.trim()) return;
+
+    const sponsor = side === "left" ? config.leftSponsor : config.rightSponsor;
+    const flagCode = side === "left" ? config.leftFlagCode : config.rightFlagCode;
+
+    rememberKnownPlayer({ name, sponsor, flagCode });
+    setKnownPlayers(loadKnownPlayers());
+  };
+
+  const rememberTeam = (team: string) => {
+    if (!team.trim()) return;
+    rememberKnownTeam(team);
+    setKnownTeams(loadKnownTeams());
   };
 
   const swapSides = () => {
@@ -334,18 +623,24 @@ export default function ConfigPage() {
                     value={config.leftFlagCode}
                     onChange={(value) => update("leftFlagCode", value)}
                   />
-                  <input
+                  <TeamSuggestInput
                     id="left-sponsor-input"
                     placeholder="Team / Sponsor"
                     value={config.leftSponsor}
-                    onChange={(event) => update("leftSponsor", event.target.value)}
+                    teams={knownTeams}
+                    onChange={(value) => update("leftSponsor", value)}
+                    onCommit={rememberTeam}
                   />
                 </div>
-                <input
+                <PlayerSuggestInput
+                  id="left-name-input"
                   className="name-input"
                   placeholder="Player name"
                   value={config.leftName}
-                  onChange={(event) => update("leftName", event.target.value)}
+                  players={knownPlayers}
+                  onChange={(value) => update("leftName", value)}
+                  onPick={(player) => applyKnownPlayer("left", player)}
+                  onCommit={() => rememberFromField("left")}
                 />
                 <div className="score-block-stack">
                   <button
@@ -375,18 +670,24 @@ export default function ConfigPage() {
                     value={config.rightFlagCode}
                     onChange={(value) => update("rightFlagCode", value)}
                   />
-                  <input
+                  <TeamSuggestInput
                     id="right-sponsor-input"
                     placeholder="Team / Sponsor"
                     value={config.rightSponsor}
-                    onChange={(event) => update("rightSponsor", event.target.value)}
+                    teams={knownTeams}
+                    onChange={(value) => update("rightSponsor", value)}
+                    onCommit={rememberTeam}
                   />
                 </div>
-                <input
+                <PlayerSuggestInput
+                  id="right-name-input"
                   className="name-input"
                   placeholder="Player name"
                   value={config.rightName}
-                  onChange={(event) => update("rightName", event.target.value)}
+                  players={knownPlayers}
+                  onChange={(value) => update("rightName", value)}
+                  onPick={(player) => applyKnownPlayer("right", player)}
+                  onCommit={() => rememberFromField("right")}
                 />
                 <div className="score-block-stack">
                   <button
