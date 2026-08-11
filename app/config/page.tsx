@@ -495,6 +495,8 @@ export default function ConfigPage() {
     setToken(value);
     if (value) {
       window.localStorage.setItem(TOKEN_STORAGE_KEY, value);
+      // Entering a token should push the current view right away, not wait for the next edit.
+      isDirtyRef.current = true;
     } else {
       window.localStorage.removeItem(TOKEN_STORAGE_KEY);
     }
