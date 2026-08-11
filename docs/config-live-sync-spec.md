@@ -2,7 +2,7 @@
 
 ## Problem
 
-`/overlay` already polls `GET /api/overlay-config` every second, so the
+`/overlay` already polls `GET /api/overlay-config` every 5s, so the
 broadcast overlay always reflects the latest remote config (see
 [remote-config-spec.md](remote-config-spec.md)). `/config` does not: it only
 calls `fetchRemoteOverlayConfig()` once on mount. If two people have `/config`

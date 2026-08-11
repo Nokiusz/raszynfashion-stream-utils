@@ -12,7 +12,7 @@ import {
   STORAGE_KEY,
 } from "../../lib/overlayConfig";
 
-const REMOTE_POLL_INTERVAL_MS = 1000;
+const REMOTE_POLL_INTERVAL_MS = 5000;
 
 export default function OverlayPage() {
   const [config, setConfig] = useState<OverlayConfig>(defaultOverlayConfig);

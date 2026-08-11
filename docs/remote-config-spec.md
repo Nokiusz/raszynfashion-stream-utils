@@ -22,7 +22,7 @@ Rejected alternatives:
   workflow for a shape that already evolves field-by-field.
 - **Push-based realtime (SSE/WebSocket/Pusher)** — nicer latency, but Vercel
   serverless functions don't hold long-lived connections well without extra
-  infra. Polling every ~1s is simple, robust, and fast enough for OBS overlays.
+  infra. Polling every few seconds is simple, robust, and fast enough for OBS overlays.
 
 ## Data model
 
@@ -97,7 +97,7 @@ Keep `STORAGE_KEY`, `OVERLAY_CHANNEL`, `loadOverlayConfig`, `saveOverlayConfig`,
 
 - Keep existing `loadOverlayConfig` + `BroadcastChannel` + `storage` event
   handling for same-machine instant updates.
-- Replace the 500ms `localStorage` polling interval with a ~1s poll of
+- Replace the 500ms `localStorage` polling interval with a ~5s poll of
   `fetchRemoteOverlayConfig()`. Compare `updatedAt` (not full JSON stringify)
   to decide whether to update state, and only overwrite if the remote
   `updatedAt` is newer than the last applied one.
@@ -142,7 +142,7 @@ Keep `STORAGE_KEY`, `OVERLAY_CHANNEL`, `loadOverlayConfig`, `saveOverlayConfig`,
 
 - [ ] `npm run build` passes.
 - [ ] Editing `/config` on machine A updates `/overlay` open on machine B
-      within ~1s.
+      within ~5s.
 - [ ] Overlay visibility toggle still works end-to-end through the API path.
 - [ ] `/config` still works with the API unreachable (falls back to local
       storage, shows "not synced" indicator, doesn't throw).
