@@ -41,6 +41,7 @@ const SEED_PLAYERS: KnownPlayer[] = [
   { name: "C-Hush", sponsor: "", flagCode: "jp" },
   { name: "Puszek", sponsor: "", flagCode: "pl" },
   { name: "H3niu", sponsor: "DBL", flagCode: "pl" },
+  { name: "Grzenio", sponsor: "DBL", flagCode: "pl" },
   { name: "skarpeta", sponsor: "zupa", flagCode: "pl" },
   { name: "YamiSzymi", sponsor: "", flagCode: "pl" },
   { name: "Koyot", sponsor: "TKND", flagCode: "pl" },
