@@ -100,10 +100,12 @@ export const fetchRemoteOverlayConfig =
     }
   };
 
+export type PushOverlayConfigResult = { ok: boolean; updatedAt: number | null };
+
 export const pushRemoteOverlayConfig = async (
   config: OverlayConfig,
   token: string,
-): Promise<boolean> => {
+): Promise<PushOverlayConfigResult> => {
   try {
     const response = await fetch(CONFIG_API_ROUTE, {
       method: "PUT",
@@ -113,9 +115,11 @@ export const pushRemoteOverlayConfig = async (
       },
       body: JSON.stringify(config),
     });
-    return response.ok;
+    if (!response.ok) return { ok: false, updatedAt: null };
+    const data = (await response.json()) as { updatedAt: number };
+    return { ok: true, updatedAt: data.updatedAt };
   } catch (error) {
     console.warn("Failed to push remote overlay config", error);
-    return false;
+    return { ok: false, updatedAt: null };
   }
 };

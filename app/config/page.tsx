@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   broadcastOverlayConfig,
   defaultOverlayConfig,
@@ -21,6 +21,8 @@ import { loadKnownTeams, rememberKnownTeam, suggestTeams } from "../../lib/known
 import { FLAG_OPTIONS } from "../../lib/flags";
 
 const PUSH_DEBOUNCE_MS = 400;
+
+type PullResult = "updated" | "up-to-date" | "dirty" | "error";
 
 const getFlagUrl = (code: string) => `https://flagcdn.com/w40/${code}.png`;
 
@@ -381,10 +383,14 @@ export default function ConfigPage() {
   const [syncStatus, setSyncStatus] = useState<"idle" | "synced" | "error">("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const [syncPanelOpen, setSyncPanelOpen] = useState(false);
+  const [pullState, setPullState] = useState<"idle" | "pulling" | PullResult>("idle");
   const [knownPlayers, setKnownPlayers] = useState<KnownPlayer[]>([]);
   const [knownTeams, setKnownTeams] = useState<string[]>([]);
 
   const pushTimeoutRef = useRef<number | null>(null);
+  // updatedAt of the config currently held locally; guards remote polls from clobbering an in-flight edit.
+  const lastAppliedUpdatedAtRef = useRef<number>(0);
+  const isDirtyRef = useRef<boolean>(false);
 
   useEffect(() => {
     const storedToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -397,6 +403,7 @@ export default function ConfigPage() {
       const remote = await fetchRemoteOverlayConfig();
       if (remote) {
         setConfig(remote.config);
+        lastAppliedUpdatedAtRef.current = remote.updatedAt;
       } else {
         const stored = loadOverlayConfig();
         if (stored) setConfig(stored);
@@ -411,17 +418,22 @@ export default function ConfigPage() {
     saveOverlayConfig(config);
     broadcastOverlayConfig(config);
 
+    if (!isDirtyRef.current) return;
+
     if (!token) {
       setSyncStatus("idle");
+      isDirtyRef.current = false;
       return;
     }
 
     if (pushTimeoutRef.current) window.clearTimeout(pushTimeoutRef.current);
     pushTimeoutRef.current = window.setTimeout(async () => {
-      const ok = await pushRemoteOverlayConfig(config, token);
-      if (ok) {
+      const result = await pushRemoteOverlayConfig(config, token);
+      isDirtyRef.current = false;
+      if (result.ok) {
         setSyncStatus("synced");
         setLastSyncedAt(Date.now());
+        if (result.updatedAt) lastAppliedUpdatedAtRef.current = result.updatedAt;
       } else {
         setSyncStatus("error");
       }
@@ -437,6 +449,48 @@ export default function ConfigPage() {
     setAccent2Draft(config.themeAccent2);
   }, [config.themeAccent, config.themeAccent2]);
 
+  const fetchAndApplyRemote = useCallback(async (): Promise<PullResult> => {
+    const remote = await fetchRemoteOverlayConfig();
+    if (!remote) return "error";
+    if (remote.updatedAt <= lastAppliedUpdatedAtRef.current) return "up-to-date";
+    if (isDirtyRef.current) return "dirty";
+
+    lastAppliedUpdatedAtRef.current = remote.updatedAt;
+    setConfig(remote.config);
+    return "updated";
+  }, []);
+
+  // Fetches only when a control is clicked, instead of on a timer, to avoid idle network traffic.
+  const pollRemote = useCallback(async () => {
+    if (!loaded) return;
+    await fetchAndApplyRemote();
+  }, [loaded, fetchAndApplyRemote]);
+
+  const pullResetTimeoutRef = useRef<number | null>(null);
+
+  const handlePullLatest = async () => {
+    setPullState("pulling");
+    const result = await fetchAndApplyRemote();
+    setPullState(result);
+
+    if (pullResetTimeoutRef.current) window.clearTimeout(pullResetTimeoutRef.current);
+    pullResetTimeoutRef.current = window.setTimeout(() => setPullState("idle"), 2500);
+  };
+
+  const controlsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = controlsRef.current;
+    if (!node) return;
+
+    const handleClick = () => {
+      void pollRemote();
+    };
+
+    node.addEventListener("click", handleClick);
+    return () => node.removeEventListener("click", handleClick);
+  }, [pollRemote]);
+
   const updateToken = (value: string) => {
     setToken(value);
     if (value) {
@@ -447,6 +501,7 @@ export default function ConfigPage() {
   };
 
   const update = <K extends keyof OverlayConfig>(key: K, value: OverlayConfig[K]) => {
+    isDirtyRef.current = true;
     setConfig((current) => ({ ...current, [key]: value }));
   };
 
@@ -455,6 +510,7 @@ export default function ConfigPage() {
       ? player.flagCode
       : "pl";
 
+    isDirtyRef.current = true;
     setConfig((current) =>
       side === "left"
         ? {
@@ -493,6 +549,7 @@ export default function ConfigPage() {
   };
 
   const swapSides = () => {
+    isDirtyRef.current = true;
     setConfig((current) => ({
       ...current,
       leftFlagCode: current.rightFlagCode,
@@ -507,6 +564,7 @@ export default function ConfigPage() {
   };
 
   const resetPlayers = () => {
+    isDirtyRef.current = true;
     setConfig((current) => ({
       ...current,
       leftFlagCode: "pl",
@@ -560,7 +618,7 @@ export default function ConfigPage() {
   return (
     <div className="overlay-shell config-shell">
       <div className="page-grid">
-        <div className="controls-grid">
+        <div className="controls-grid" ref={controlsRef}>
           <div className="setting-group sync-panel">
             <button
               type="button"
@@ -592,6 +650,33 @@ export default function ConfigPage() {
                   autoComplete="off"
                   spellCheck={false}
                 />
+                <button
+                  type="button"
+                  className="quick-action-button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handlePullLatest();
+                  }}
+                  disabled={pullState === "pulling"}
+                >
+                  {pullState === "pulling" ? "Pulling…" : "Pull latest"}
+                </button>
+                {pullState !== "idle" && pullState !== "pulling" && (
+                  <span
+                    className={
+                      "sync-status sync-status--" +
+                      (pullState === "error" ? "error" : pullState === "updated" ? "synced" : "idle")
+                    }
+                  >
+                    {pullState === "updated"
+                      ? "Updated from remote"
+                      : pullState === "up-to-date"
+                        ? "Already up to date"
+                        : pullState === "dirty"
+                          ? "Skipped — you have unsaved changes"
+                          : "Pull failed — check connection"}
+                  </span>
+                )}
               </div>
             )}
           </div>
